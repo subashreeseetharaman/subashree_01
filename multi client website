@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Multi-Client Service Marketplace</title>
+<style>
+body { font-family: Arial; background:#f4f4f4; margin:0; }
+header { background:#222; color:white; padding:10px; text-align:center; }
+section { background:white; padding:15px; margin:10px; border-radius:5px; }
+input, select, textarea, button {
+    width:100%; padding:8px; margin:5px 0;
+}
+button { background:green; color:white; border:none; cursor:pointer; }
+.service, .order { border-bottom:1px solid #ccc; padding:8px; }
+.rating { color:orange; }
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Service Marketplace</h1>
+<p>Merchants & Customers Platform</p>
+</header>
+
+<!-- MERCHANT SIGNUP -->
+<section>
+<h2>Merchant Signup</h2>
+<input id="mName" placeholder="Merchant Name">
+<select id="mCategory">
+<option>Home</option>
+<option>Beauty</option>
+<option>Pet</option>
+<option>Education</option>
+</select>
+<input id="mService" placeholder="Service Name">
+<input id="mPrice" placeholder="Price">
+<button onclick="addMerchant()">Register Merchant</button>
+</section>
+
+<!-- CUSTOMER SIGNUP -->
+<section>
+<h2>Customer Signup</h2>
+<input id="cName" placeholder="Customer Name">
+<button onclick="addCustomer()">Register Customer</button>
+</section>
+
+<!-- BROWSE SERVICES -->
+<section>
+<h2>Browse Services</h2>
+<select id="filter" onchange="loadServices()">
+<option>All</option>
+<option>Home</option>
+<option>Beauty</option>
+<option>Pet</option>
+<option>Education</option>
+</select>
+<div id="services"></div>
+</section>
+
+<!-- CHECKOUT -->
+<section>
+<h2>Checkout</h2>
+<input id="buyer" placeholder="Your Name">
+<input placeholder="Card Number (Demo)">
+<button onclick="checkout()">Pay & Place Order</button>
+<p id="paymentStatus"></p>
+</section>
+
+<!-- MERCHANT DASHBOARD -->
+<section>
+<h2>Merchant Dashboard</h2>
+<div id="orders"></div>
+</section>
+
+<script>
+let selectedService = null;
+
+function addMerchant() {
+    let merchants = JSON.parse(localStorage.getItem("merchants")) || [];
+    merchants.push({
+        name: mName.value,
+        category: mCategory.value,
+        service: mService.value,
+        price: mPrice.value,
+        rating: []
+    });
+    localStorage.setItem("merchants", JSON.stringify(merchants));
+    alert("Merchant Registered");
+    loadServices();
+}
+
+function addCustomer() {
+    let customers = JSON.parse(localStorage.getItem("customers")) || [];
+    customers.push(cName.value);
+    localStorage.setItem("customers", JSON.stringify(customers));
+    alert("Customer Registered");
+}
+
+function loadServices() {
+    let merchants = JSON.parse(localStorage.getItem("merchants")) || [];
+    let filter = document.getElementById("filter").value;
+    let html = "";
+    merchants.forEach((m, i) => {
+        if (filter === "All" || m.category === filter) {
+            let avg = m.rating.length ? 
+                (m.rating.reduce((a,b)=>a+b)/m.rating.length).toFixed(1) : "No ratings";
+            html += `
+            <div class="service">
+                <b>${m.service}</b> (${m.category})<br>
+                Merchant: ${m.name}<br>
+                Price: ₹${m.price}<br>
+                Rating: <span class="rating">${avg}</span><br>
+                <button onclick="selectService(${i})">Buy</button>
+                <button onclick="rate(${i})">Rate</button>
+            </div>`;
+        }
+    });
+    services.innerHTML = html;
+}
+
+function selectService(i) {
+    selectedService = i;
+    alert("Service selected");
+}
+
+function checkout() {
+    if (selectedService === null) {
+        alert("Select a service first");
+        return;
+    }
+    let merchants = JSON.parse(localStorage.getItem("merchants"));
+    let orders = JSON.parse(localStorage.getItem("orders")) || [];
+    orders.push({
+        service: merchants[selectedService].service,
+        merchant: merchants[selectedService].name,
+        buyer: buyer.value,
+        price: merchants[selectedService].price
+    });
+    localStorage.setItem("orders", JSON.stringify(orders));
+    paymentStatus.innerText = "Payment Successful! Receipt sent via email (demo).";
+    loadOrders();
+}
+
+function loadOrders() {
+    let orders = JSON.parse(localStorage.getItem("orders")) || [];
+    let html = "";
+    orders.forEach(o => {
+        html += `
+        <div class="order">
+            ${o.service} - ₹${o.price}<br>
+            Buyer: ${o.buyer}<br>
+            Merchant: ${o.merchant}
+        </div>`;
+    });
+    orders.innerHTML = html;
+}
+
+function rate(i) {
+    let r = prompt("Rate 1 to 5");
+    let merchants = JSON.parse(localStorage.getItem("merchants"));
+    merchants[i].rating.push(Number(r));
+    localStorage.setItem("merchants", JSON.stringify(merchants));
+    loadServices();
+}
+
+loadServices();
+loadOrders();
+</script>
+
+</body>
+</html>
