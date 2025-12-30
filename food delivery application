@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Food Delivery Application</title>
+<style>
+body { font-family: Arial; background:#f2f2f2; margin:0; }
+header { background:#e53935; color:white; padding:15px; text-align:center; }
+section { background:white; padding:15px; margin:10px; border-radius:6px; }
+input, select, button { padding:8px; width:100%; margin:5px 0; }
+button { background:#43a047; color:white; border:none; cursor:pointer; }
+.food, .order { border-bottom:1px solid #ccc; padding:8px; }
+.status { font-weight:bold; color:blue; }
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Food Delivery App</h1>
+<p>Restaurants • Customers • Delivery Tracking</p>
+</header>
+
+<!-- RESTAURANT SIGNUP -->
+<section>
+<h2>Restaurant Signup</h2>
+<input id="rName" placeholder="Restaurant Name">
+<select id="rCuisine">
+<option>Indian</option>
+<option>Chinese</option>
+<option>Italian</option>
+<option>Fast Food</option>
+</select>
+<input id="dish" placeholder="Dish Name">
+<input id="price" placeholder="Price">
+<button onclick="addRestaurant()">Register Restaurant</button>
+</section>
+
+<!-- CUSTOMER SIGNUP -->
+<section>
+<h2>Customer Signup</h2>
+<input id="cName" placeholder="Customer Name">
+<button onclick="addCustomer()">Register Customer</button>
+</section>
+
+<!-- BROWSE RESTAURANTS -->
+<section>
+<h2>Browse Restaurants</h2>
+<select id="filter" onchange="loadMenu()">
+<option>All</option>
+<option>Indian</option>
+<option>Chinese</option>
+<option>Italian</option>
+<option>Fast Food</option>
+</select>
+<div id="menu"></div>
+</section>
+
+<!-- CART -->
+<section>
+<h2>Cart & Checkout</h2>
+<div id="cart"></div>
+<h3>Total: ₹<span id="total">0</span></h3>
+<button onclick="placeOrder()">Pay & Order</button>
+<p id="payment"></p>
+</section>
+
+<!-- ORDER TRACKING -->
+<section>
+<h2>Order Tracking</h2>
+<div id="tracking"></div>
+</section>
+
+<!-- RESTAURANT DASHBOARD -->
+<section>
+<h2>Restaurant Dashboard</h2>
+<div id="orders"></div>
+</section>
+
+<script>
+let selectedDish = null;
+
+function addRestaurant(){
+ let restaurants = JSON.parse(localStorage.getItem("restaurants")) || [];
+ restaurants.push({
+  name:rName.value,
+  cuisine:rCuisine.value,
+  dish:dish.value,
+  price:Number(price.value),
+  rating:[]
+ });
+ localStorage.setItem("restaurants", JSON.stringify(restaurants));
+ alert("Restaurant Registered");
+ loadMenu();
+}
+
+function addCustomer(){
+ let customers = JSON.parse(localStorage.getItem("customers")) || [];
+ customers.push(cName.value);
+ localStorage.setItem("customers", JSON.stringify(customers));
+ alert("Customer Registered");
+}
+
+function loadMenu(){
+ let restaurants = JSON.parse(localStorage.getItem("restaurants")) || [];
+ let f = filter.value;
+ let html="";
+ restaurants.forEach((r,i)=>{
+  if(f=="All"||r.cuisine==f){
+   html+=`
+   <div class="food">
+   <b>${r.dish}</b> - ₹${r.price}<br>
+   ${r.name} (${r.cuisine})<br>
+   <button onclick="addToCart(${i})">Add to Cart</button>
+   </div>`;
+  }
+ });
+ menu.innerHTML=html;
+}
+
+function addToCart(i){
+ let cart = JSON.parse(localStorage.getItem("cart")) || [];
+ let restaurants = JSON.parse(localStorage.getItem("restaurants"));
+ cart.push(restaurants[i]);
+ localStorage.setItem("cart", JSON.stringify(cart));
+ loadCart();
+}
+
+function loadCart(){
+ let cart = JSON.parse(localStorage.getItem("cart")) || [];
+ let html="", total=0;
+ cart.forEach(c=>{
+  html+=`<div>${c.dish} - ₹${c.price}</div>`;
+  total+=c.price;
+ });
+ cartDiv.innerHTML=html;
+ totalSpan.innerText=total;
+}
+const cartDiv=document.getElementById("cart");
+const totalSpan=document.getElementById("total");
+
+function placeOrder(){
+ let cart = JSON.parse(localStorage.getItem("cart")) || [];
+ if(cart.length==0){ alert("Cart empty"); return; }
+ let orders = JSON.parse(localStorage.getItem("orders")) || [];
+ orders.push({
+  customer:cName.value,
+  items:cart,
+  status:"Order Placed",
+  eta:30
+ });
+ localStorage.setItem("orders", JSON.stringify(orders));
+ localStorage.removeItem("cart");
+ payment.innerText="Payment Successful! Order placed.";
+ loadCart();
+ trackOrder();
+ loadOrders();
+}
+
+function trackOrder(){
+ let orders = JSON.parse(localStorage.getItem("orders")) || [];
+ if(orders.length==0) return;
+ let o = orders[orders.length-1];
+ tracking.innerHTML = `
+ <p>Status: <span class="status">${o.status}</span></p>
+ <p>Delivery Partner Location: 📍 On the way</p>
+ <p>Estimated Time: ${o.eta} mins</p>`;
+ setTimeout(()=>{
+  o.status="Out for Delivery";
+  o.eta=15;
+  localStorage.setItem("orders", JSON.stringify(orders));
+  trackOrder();
+ },3000);
+ setTimeout(()=>{
+  o.status="Delivered";
+  o.eta=0;
+  localStorage.setItem("orders", JSON.stringify(orders));
+  trackOrder();
+ },6000);
+}
+
+function loadOrders(){
+ let orders = JSON.parse(localStorage.getItem("orders")) || [];
+ let html="";
+ orders.forEach((o,i)=>{
+  html+=`
+  <div class="order">
+  Order #${i+1}<br>
+  Customer: ${o.customer}<br>
+  Items: ${o.items.map(it=>it.dish).join(", ")}<br>
+  Status: ${o.status}
+  </div>`;
+ });
+ ordersDiv.innerHTML=html;
+}
+const ordersDiv=document.getElementById("orders");
+
+loadMenu();
+loadCart();
+loadOrders();
+</script>
+
+</body>
+</html>
