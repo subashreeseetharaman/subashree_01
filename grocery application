@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Online Grocery Delivery</title>
+<style>
+body { font-family: Arial; background:#f4f4f4; margin:0; }
+header { background:#2e7d32; color:white; padding:15px; text-align:center; }
+section { background:white; padding:15px; margin:10px; border-radius:6px; }
+input, select, button { padding:8px; width:100%; margin:5px 0; }
+button { background:#43a047; color:white; border:none; cursor:pointer; }
+.item, .order { border-bottom:1px solid #ccc; padding:8px; }
+.status { font-weight:bold; color:#1e88e5; }
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Online Grocery Store</h1>
+<p>Fresh Groceries • Doorstep Delivery</p>
+</header>
+
+<!-- USER SIGNUP -->
+<section>
+<h2>User Signup</h2>
+<input id="uName" placeholder="User Name">
+<input placeholder="Delivery Address">
+<button onclick="addUser()">Register</button>
+</section>
+
+<!-- GROCERY LIST -->
+<section>
+<h2>Available Groceries</h2>
+<input id="search" placeholder="Search items..." onkeyup="loadItems()">
+<div id="items"></div>
+</section>
+
+<!-- CART -->
+<section>
+<h2>Cart</h2>
+<div id="cart"></div>
+<h3>Total: ₹<span id="total">0</span></h3>
+
+<label>Choose Delivery Slot</label>
+<select id="slot">
+<option>Morning (7–10 AM)</option>
+<option>Afternoon (12–3 PM)</option>
+<option>Evening (5–8 PM)</option>
+</select>
+
+<button onclick="checkout()">Proceed to Payment</button>
+<p id="payment"></p>
+</section>
+
+<!-- ORDER TRACKING -->
+<section>
+<h2>Order Tracking</h2>
+<div id="tracking"></div>
+</section>
+
+<!-- STORE DASHBOARD -->
+<section>
+<h2>Store Dashboard</h2>
+<div id="orders"></div>
+</section>
+
+<script>
+// INITIAL GROCERY DATA
+let groceries = JSON.parse(localStorage.getItem("groceries")) || [
+ {name:"Rice 5kg", price:350, qty:100},
+ {name:"Wheat Flour 5kg", price:280, qty:80},
+ {name:"Sugar 1kg", price:45, qty:200},
+ {name:"Milk 1L", price:55, qty:150},
+ {name:"Cooking Oil 1L", price:160, qty:90},
+ {name:"Eggs (12)", price:90, qty:60}
+];
+localStorage.setItem("groceries", JSON.stringify(groceries));
+
+function addUser(){
+ let users = JSON.parse(localStorage.getItem("users")) || [];
+ users.push(uName.value);
+ localStorage.setItem("users", JSON.stringify(users));
+ alert("User Registered");
+}
+
+function loadItems(){
+ let s = search.value.toLowerCase();
+ let html="";
+ groceries.forEach((g,i)=>{
+  if(g.name.toLowerCase().includes(s)){
+   html+=`
+   <div class="item">
+   <b>${g.name}</b><br>
+   Price: ₹${g.price}<br>
+   Available: ${g.qty}<br>
+   <button onclick="addToCart(${i})">Add to Cart</button>
+   </div>`;
+  }
+ });
+ items.innerHTML=html;
+}
+
+function addToCart(i){
+ let cart = JSON.parse(localStorage.getItem("cart")) || [];
+ if(groceries[i].qty <= 0){ alert("Out of stock"); return; }
+ cart.push(groceries[i]);
+ groceries[i].qty--;
+ localStorage.setItem("cart", JSON.stringify(cart));
+ localStorage.setItem("groceries", JSON.stringify(groceries));
+ loadCart(); loadItems();
+}
+
+function loadCart(){
+ let cart = JSON.parse(localStorage.getItem("cart")) || [];
+ let html="", total=0;
+ cart.forEach(c=>{
+  html+=`<div>${c.name} - ₹${c.price}</div>`;
+  total+=c.price;
+ });
+ cartDiv.innerHTML=html;
+ totalSpan.innerText=total;
+}
+const cartDiv=document.getElementById("cart");
+const totalSpan=document.getElementById("total");
+
+function checkout(){
+ let cart = JSON.parse(localStorage.getItem("cart")) || [];
+ if(cart.length==0){ alert("Cart empty"); return; }
+
+ let orders = JSON.parse(localStorage.getItem("orders")) || [];
+ orders.push({
+  user:uName.value,
+  items:cart,
+  slot:slot.value,
+  status:"Order Confirmed",
+  eta:"3 hrs"
+ });
+ localStorage.setItem("orders", JSON.stringify(orders));
+ localStorage.removeItem("cart");
+
+ payment.innerText="Payment Successful! Order placed.";
+ loadCart(); trackOrder(); loadOrders();
+}
+
+function trackOrder(){
+ let orders = JSON.parse(localStorage.getItem("orders")) || [];
+ if(orders.length==0) return;
+ let o = orders[orders.length-1];
+
+ tracking.innerHTML=`
+ <p>Status: <span class="status">${o.status}</span></p>
+ <p>Delivery Slot: ${o.slot}</p>
+ <p>Delivery Partner: 🚚 Assigned</p>
+ <p>ETA: ${o.eta}</p>`;
+
+ setTimeout(()=>{
+  o.status="Out for Delivery";
+  o.eta="30 mins";
+  localStorage.setItem("orders", JSON.stringify(orders));
+  trackOrder();
+ },3000);
+
+ setTimeout(()=>{
+  o.status="Delivered";
+  o.eta="0";
+  localStorage.setItem("orders", JSON.stringify(orders));
+  trackOrder();
+ },6000);
+}
+
+function loadOrders(){
+ let orders = JSON.parse(localStorage.getItem("orders")) || [];
+ let html="";
+ orders.forEach((o,i)=>{
+  html+=`
+  <div class="order">
+  Order #${i+1}<br>
+  User: ${o.user}<br>
+  Items: ${o.items.map(it=>it.name).join(", ")}<br>
+  Slot: ${o.slot}<br>
+  Status: ${o.status}
+  </div>`;
+ });
+ ordersDiv.innerHTML=html;
+}
+const ordersDiv=document.getElementById("orders");
+
+loadItems();
+loadCart();
+loadOrders();
+</script>
+
+</body>
+</html>
