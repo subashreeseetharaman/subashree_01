@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple CMS Blog</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            background: #f4f4f4;
+        }
+        header {
+            background: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            padding: 20px;
+        }
+        .tools, .editor, .preview {
+            background: white;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 5px;
+        }
+        .tools {
+            width: 20%;
+        }
+        .editor {
+            width: 40%;
+        }
+        .preview {
+            width: 40%;
+        }
+        .tool {
+            padding: 10px;
+            background: #ddd;
+            margin: 10px 0;
+            cursor: grab;
+        }
+        #canvas {
+            min-height: 200px;
+            border: 2px dashed #aaa;
+            padding: 10px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+        }
+        button {
+            padding: 10px;
+            margin-top: 10px;
+            background: green;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .post {
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Content Management System – Blog</h1>
+    <p>Drag & Drop | Blog Editor | Publish</p>
+</header>
+
+<div class="container">
+
+    <!-- TOOLS -->
+    <div class="tools">
+        <h3>Drag Elements</h3>
+        <div class="tool" draggable="true" ondragstart="drag(event)" data-type="text">Text Block</div>
+        <div class="tool" draggable="true" ondragstart="drag(event)" data-type="image">Image Block</div>
+    </div>
+
+    <!-- PAGE BUILDER -->
+    <div class="editor">
+        <h3>Page Builder</h3>
+        <div id="canvas" ondrop="drop(event)" ondragover="allowDrop(event)">
+            Drop elements here
+        </div>
+
+        <h3>Write Blog Post</h3>
+        <textarea id="content" placeholder="Write blog content here..."></textarea>
+        <button onclick="publishPost()">Publish Blog</button>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="preview">
+        <h3>Published Blogs</h3>
+        <div id="posts"></div>
+    </div>
+
+</div>
+
+<script>
+    function allowDrop(ev) {
+        ev.preventDefault();
+    }
+
+    function drag(ev) {
+        ev.dataTransfer.setData("type", ev.target.dataset.type);
+    }
+
+    function drop(ev) {
+        ev.preventDefault();
+        let type = ev.dataTransfer.getData("type");
+
+        if (type === "text") {
+            let div = document.createElement("div");
+            div.innerHTML = "Editable Text";
+            div.contentEditable = true;
+            div.style.border = "1px solid #ccc";
+            div.style.padding = "10px";
+            div.style.margin = "5px";
+            ev.target.appendChild(div);
+        }
+
+        if (type === "image") {
+            let img = document.createElement("img");
+            img.src = "https://via.placeholder.com/150";
+            img.style.display = "block";
+            img.style.margin = "5px";
+            ev.target.appendChild(img);
+        }
+    }
+
+    function publishPost() {
+        let content = document.getElementById("content").value;
+        if (content === "") {
+            alert("Write something!");
+            return;
+        }
+
+        let posts = JSON.parse(localStorage.getItem("posts")) || [];
+        posts.push(content);
+        localStorage.setItem("posts", JSON.stringify(posts));
+
+        document.getElementById("content").value = "";
+        loadPosts();
+    }
+
+    function loadPosts() {
+        let posts = JSON.parse(localStorage.getItem("posts")) || [];
+        let output = "";
+
+        posts.forEach((post, index) => {
+            output += `
+                <div class="post">
+                    <h4>Blog Post ${index + 1}</h4>
+                    <div>${post}</div>
+                </div>
+            `;
+        });
+
+        document.getElementById("posts").innerHTML = output;
+    }
+
+    loadPosts();
+</script>
+
+</body>
+</html>
